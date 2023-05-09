@@ -1,20 +1,41 @@
-import express from "express";
+import express, { urlencoded } from "express";
 import exphbs from "express-handlebars";
+import path from "path";
 import mongoose from "mongoose";
-import _dirname from "./utils.js";
+import cookieParser from "cookie-parser";
+import session from "express-session";
+import MongoStore from "connect-mongo";
 
+import _dirname from "./utils.js";
 import productRoutes from "./routes/products.routes.js";
 import cartRoutes from "./routes/carts.routes.js";
 import viewsRouter from "./routes/views.router.js";
-import path from "path";
+import usersViewRouter from "./routes/users.views.router.js";
+import sessionsRouter from "./routes/sessions.router.js";
 
 const app = express();
 const PORT = 8080;
+const MONGO_URL = "mongodb://localhost:27017/ecommerce?retryWrites=true&w=majority";
 
 // middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(_dirname, "public")));
+
+// config cookie
+app.use(cookieParser());
+app.use(
+  session({
+    store: MongoStore.create({
+      mongoUrl: MONGO_URL,
+      mongoOptions: { useNewUrlParser: true, useUnifiedTopology: true },
+      ttl: 100,
+    }),
+    secret: "S3cr3t",
+    resave: false,
+    saveUninitialized: true,
+  })
+);
 
 // motor de plantillas
 app.set("views", path.join(_dirname, "views"));
@@ -35,6 +56,8 @@ app.set("view engine", ".hbs");
 app.use("/", viewsRouter);
 app.use("/api/products", productRoutes);
 app.use("/api/carts", cartRoutes);
+app.use("/api/sessions", sessionsRouter);
+app.use("/users", usersViewRouter);
 
 const httpServer = app.listen(PORT, () => {
   console.log(`Servidor escuchando en el puerto ${PORT}`);
@@ -42,9 +65,7 @@ const httpServer = app.listen(PORT, () => {
 
 const connectMongoDB = async () => {
   try {
-    await mongoose.connect(
-      "mongodb://localhost:27017/ecommerce?retryWrites=true&w=majority"
-    );
+    await mongoose.connect(MONGO_URL);
     console.log("Conectado con exito a MongoDB usando Moongose.");
 
 
