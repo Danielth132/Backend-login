@@ -10,7 +10,12 @@ const schema = mongoose.Schema({
     },
     age: Number,
     password:String,
-    rol: String
+    loggedBy: String,
+    rol:{
+        type: String,
+        default: "user",
+        enum: ["user", "admin"],
+    }
 })
 const userModel = mongoose.model(collection,schema);
 export default userModel;
